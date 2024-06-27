@@ -1,0 +1,42 @@
+{
+    "guerrier": {
+        "power1": {
+            "name": "Coup d'epee",
+            "value": 10
+        },
+        "power2": {
+            "name": "Coup pip",
+            "value": 15
+        }
+    },
+    "mage": {
+        "power1": {
+            "name": "Fireball",
+            "value": 10
+        },
+        "power2": {
+            "name": "Ice Blast",
+            "value": 15
+        }
+    },
+    "voleur": {
+        "power1": {
+            "name": "Backstab",
+            "value": 10
+        },
+        "power2": {
+            "name": "Poison",
+            "value": 15
+        }
+    },
+    "pretre": {
+        "power1": {
+            "name": "Eau bénite",
+            "value": 10
+        },
+        "power2": {
+            "name": "Croix de saint pierre",
+            "value": 15
+        }
+    }
+}
