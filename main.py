@@ -5,104 +5,74 @@
 #        \____/\__,_/_/   \__,_/_/\___/_/ /_/_/ /_/             #
 #                                                               #
 
-from fonctions_choix import *
-from fonctions import *
-import json
 import random
 import time
 
-# Choix des classes
-player = ""
-bot = ""
-choix_de_depart = lancement_application()
+from fonctions import attaquer, charger_classes, creer_combattant, est_vaincu
+from fonctions_choix import (
+    LancementApplicationChoix,
+    choix_classe_bot,
+    choix_classe_player,
+    choix_pouvoir,
+    lancement_application,
+    lancer_game,
+    pretty_print,
+    quitter_game,
+)
 
-if choix_de_depart == LancementApplicationChoix.Lancer.name:
-    lancer_game()
-    player = player_classe(player=player)
-    bot = bot_classe(bot=bot)
+PAUSE_ENTRE_TOURS = 1.5
 
-elif choix_de_depart == LancementApplicationChoix.Quitter.name:
-    quitter_game()
-else:
-    print("kossa ou ve fé ?")
 
-# Définir l'énergie et la vie des classes
-health_player = 100     # 100 HP
-health_bot = 100        # 100 HP
-
-# Charger les informations des classes depuis le fichier JSON
-with open('classes.json') as json_data:
-    d = json.load(json_data)
-
-power_player_1 = d[player.lower()]["power1"]["value"]
-power_player_2 = d[player.lower()]["power2"]["value"]
-name_power_player_1 = d[player.lower()]["power1"]["name"]
-name_power_player_2 = d[player.lower()]["power2"]["name"]
-
-power_bot_1 = d[bot.lower()]["power1"]["value"]
-power_bot_2 = d[bot.lower()]["power2"]["value"]
-name_power_bot_1 = d[bot.lower()]["power1"]["name"]
-name_power_bot_2 = d[bot.lower()]["power2"]["name"]
-
-def choix_power_player():
-    title = "Choisir une attaque"
-    options = [name_power_player_1, name_power_player_2]
-    option, index = pick(options, title)
-    return option
-
-def health_info():
+def afficher_vies(joueur, bot):
     pretty_print("-------- Vies --------", "green")
-    pretty_print(f"Vie du joueur: {health_player}", "green")
-    pretty_print(f"Vie du bot: {health_bot}", "green")
-    time.sleep(5)
+    pretty_print(f"Vie du joueur ({joueur['classe']}): {joueur['vie']}", "green")
+    pretty_print(f"Vie du bot ({bot['classe']}): {bot['vie']}", "green")
+    time.sleep(PAUSE_ENTRE_TOURS)
 
-# Choix aléatoire de la personne qui attaque en premier
-current_turn = random.choice([player, bot])
 
-while True:
-    health_info()
-    if current_turn == player:
-        pretty_print("-------- PLAYER --------", "blue")
-        choix_poupou = choix_power_player()
-        
-        if choix_poupou == name_power_player_1:
-            health_bot -= power_player_1
-            pretty_print(f"Pouvoir: {name_power_player_1}", "blue")
-            pretty_print(f"Dégat: {power_player_1}", "blue")
-        elif choix_poupou == name_power_player_2:
-            health_bot -= power_player_2
-            pretty_print(f"Pouvoir: {name_power_player_2}", "blue")
-            pretty_print(f"Dégat: {power_player_2}", "blue")
+def jouer_tour(titre, couleur, pouvoir, cible):
+    pretty_print(f"-------- {titre} --------", couleur)
+    degats = attaquer(cible, pouvoir)
+    pretty_print(f"Pouvoir: {pouvoir['name']}", couleur)
+    pretty_print(f"Dégat: {degats}", couleur)
 
-        # Vérifier si le bot est vaincu
-        if health_bot <= 0:
-            pretty_print("FINISH", "red")
-            print("Le joueur a gagné !")
-            break
 
-        # Passer le tour au bot
-        current_turn = bot
+def combat(joueur, bot):
+    # Le tour est suivi par un indicateur, pas par la classe (même classe des deux côtés possible)
+    tour_du_joueur = random.choice([True, False])
 
-    else:  # Le tour du bot
-        pretty_print("-------- BOT --------", "red")
-        attack_choice = random.choice([1, 2])
+    while True:
+        afficher_vies(joueur, bot)
 
-        if attack_choice == 1:
-            health_player -= power_bot_1
-            pretty_print(f"Pouvoir: {name_power_bot_1}", "red")
-            pretty_print(f"Dégat: {power_bot_1}", "red")
+        if tour_du_joueur:
+            noms = {p["name"]: p for p in joueur["pouvoirs"]}
+            pouvoir = noms[choix_pouvoir(noms)]
+            jouer_tour("PLAYER", "blue", pouvoir, bot)
+            if est_vaincu(bot):
+                return "joueur"
         else:
-            health_player -= power_bot_2
-            pretty_print(f"Pouvoir: {name_power_bot_2}", "red")
-            pretty_print(f"Dégat: {power_bot_2}", "red")
+            jouer_tour("BOT", "red", random.choice(bot["pouvoirs"]), joueur)
+            if est_vaincu(joueur):
+                return "bot"
 
-        # Vérifier si le joueur est vaincu
-        if health_player <= 0:
-            pretty_print("FINISH", "red")
-            print("Le bot a gagné !")
-            break
+        tour_du_joueur = not tour_du_joueur
 
-        # Passer le tour au joueur
-        current_turn = player
 
-pretty_print("FINISH", "red")
+def main():
+    if lancement_application() == LancementApplicationChoix.Quitter.name:
+        quitter_game()
+        return
+
+    lancer_game()
+    classes = charger_classes()
+    joueur = creer_combattant(classes, choix_classe_player())
+    bot = creer_combattant(classes, choix_classe_bot())
+
+    gagnant = combat(joueur, bot)
+    afficher_vies(joueur, bot)
+    pretty_print("FINISH", "red")
+    print("Le joueur a gagné !" if gagnant == "joueur" else "Le bot a gagné !")
+
+
+if __name__ == "__main__":
+    main()

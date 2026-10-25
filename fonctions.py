@@ -5,30 +5,33 @@
 #        \____/\__,_/_/   \__,_/_/\___/_/ /_/_/ /_/             #
 #                                                               #
 
-from fonctions_choix import *
+import json
+import os
 
-def  player_classe(player):
-    choix_de_classe_player = choix_classe_player()
+CLASSES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "classes.json")
 
-    if choix_de_classe_player == ChoixClassePlayer.Guerrier.name:
-        player = choix_de_classe_player
-    elif choix_de_classe_player == ChoixClassePlayer.Mage.name:
-        player = choix_de_classe_player
-    elif choix_de_classe_player == ChoixClassePlayer.Voleur.name:
-        player = choix_de_classe_player
-    elif choix_de_classe_player == ChoixClassePlayer.Pretre.name:
-        player = choix_de_classe_player
-    return player
 
-def bot_classe(bot):
-    choix_de_class_bot = choix_classe_bot()
+def charger_classes(path=CLASSES_PATH) -> dict:
+    """Charge les informations des classes depuis le fichier JSON."""
+    with open(path, encoding="utf-8") as json_data:
+        return json.load(json_data)
 
-    if choix_de_class_bot == ChoixClasseBot.Guerrier.name:
-        bot = choix_de_class_bot
-    elif choix_de_class_bot == ChoixClasseBot.Mage.name:
-        bot = choix_de_class_bot
-    elif choix_de_class_bot == ChoixClasseBot.Voleur.name:
-        bot = choix_de_class_bot
-    elif choix_de_class_bot == ChoixClasseBot.Pretre.name:
-        bot = choix_de_class_bot
-    return bot
+
+def creer_combattant(classes: dict, classe: str) -> dict:
+    """Construit un combattant (vie et pouvoirs) à partir du nom de sa classe."""
+    infos = classes[classe.lower()]
+    return {
+        "classe": classe,
+        "vie": infos["vie"],
+        "pouvoirs": [infos["power1"], infos["power2"]],
+    }
+
+
+def attaquer(cible: dict, pouvoir: dict) -> int:
+    """Applique un pouvoir à la cible (sa vie ne descend pas sous 0) et renvoie les dégâts."""
+    cible["vie"] = max(0, cible["vie"] - pouvoir["value"])
+    return pouvoir["value"]
+
+
+def est_vaincu(combattant: dict) -> bool:
+    return combattant["vie"] <= 0

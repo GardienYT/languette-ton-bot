@@ -1,42 +1,22 @@
 {
     "guerrier": {
-        "power1": {
-            "name": "Coup d'epee",
-            "value": 10
-        },
-        "power2": {
-            "name": "Coup pip",
-            "value": 15
-        }
+        "vie": 120,
+        "power1": {"name": "Coup d'épée", "value": 10},
+        "power2": {"name": "Frappe puissante", "value": 15}
     },
     "mage": {
-        "power1": {
-            "name": "Fireball",
-            "value": 10
-        },
-        "power2": {
-            "name": "Ice Blast",
-            "value": 15
-        }
+        "vie": 90,
+        "power1": {"name": "Boule de feu", "value": 14},
+        "power2": {"name": "Éclair de glace", "value": 18}
     },
     "voleur": {
-        "power1": {
-            "name": "Backstab",
-            "value": 10
-        },
-        "power2": {
-            "name": "Poison",
-            "value": 15
-        }
+        "vie": 100,
+        "power1": {"name": "Coup dans le dos", "value": 12},
+        "power2": {"name": "Poison", "value": 16}
     },
     "pretre": {
-        "power1": {
-            "name": "Eau bénite",
-            "value": 10
-        },
-        "power2": {
-            "name": "Croix de saint pierre",
-            "value": 15
-        }
+        "vie": 110,
+        "power1": {"name": "Eau bénite", "value": 10},
+        "power2": {"name": "Croix de saint Pierre", "value": 15}
     }
 }

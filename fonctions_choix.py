@@ -6,30 +6,30 @@
 #                                                               #
 
 from enum import Enum
-from pick import pick
+import sys
 import time
+
+from pick import pick
 from rich.console import Console
+
 
 def pretty_print(message, color):
     """
-    Print message to console using Console
-    Possible colors are: green, yellow, red or hexadecimal code
-    :param message:
-    :param color:
-    :return:
+    Affiche un message dans la console.
+    Couleurs possibles : green, yellow, red, blue ou un code hexadécimal.
     """
-    console = Console()
-    console.print(message, style=color)
+    Console().print(message, style=color)
+
 
 class LancementApplicationChoix(Enum):
     Lancer = 1
     Quitter = 2
 
-def lancement_application() -> LancementApplicationChoix:
-    title = "Languette ton Bot 💩"
-    options = [LancementApplicationChoix.Lancer.name, LancementApplicationChoix.Quitter.name]
-    option, index = pick(options, title)
 
+def lancement_application() -> str:
+    title = "Languette ton Bot 💩"
+    options = [choix.name for choix in LancementApplicationChoix]
+    option, _ = pick(options, title)
     return option
 
 
@@ -40,33 +40,30 @@ def lancer_game():
 def quitter_game():
     pretty_print("Deconnexion..", "red")
     time.sleep(1.5)
-    quit()
+    sys.exit()
 
-# Choix de la classe du Joueur
-class ChoixClassePlayer(Enum):
+
+class Classe(Enum):
     Guerrier = 1
     Mage = 2
     Voleur = 3
     Pretre = 4
 
-def choix_classe_player() -> ChoixClassePlayer:
-    title = "Quelle classe voulez vous choisir ?"
-    options = [ChoixClassePlayer.Guerrier.name, ChoixClassePlayer.Mage.name, ChoixClassePlayer.Voleur.name, ChoixClassePlayer.Pretre.name]
-    option, index = pick(options, title)
 
+def choix_classe(title: str) -> str:
+    options = [classe.name for classe in Classe]
+    option, _ = pick(options, title)
     return option
 
-# Choix de la classe du Bot
-class ChoixClasseBot(Enum):
-    Guerrier = 1
-    Mage = 2
-    Voleur = 3
-    Pretre = 4
 
-def choix_classe_bot() -> ChoixClasseBot:
-    title = "Choisir une classe pour l'adversaire"
-    options = [ChoixClasseBot.Guerrier.name, ChoixClasseBot.Mage.name, ChoixClasseBot.Voleur.name, ChoixClasseBot.Pretre.name]
-    option, index = pick(options, title)
+def choix_classe_player() -> str:
+    return choix_classe("Quelle classe voulez vous choisir ?")
 
+
+def choix_classe_bot() -> str:
+    return choix_classe("Choisir une classe pour l'adversaire")
+
+
+def choix_pouvoir(noms_pouvoirs) -> str:
+    option, _ = pick(list(noms_pouvoirs), "Choisir une attaque")
     return option
-    
