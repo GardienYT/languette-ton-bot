@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14121f">
+<title>Languette ton Bot</title>
+<style>
+  :root { --bg:#14121f; --card:#211e33; --text:#f1eefc; --muted:#9a95b8; --accent:#7c5cff; --player:#4da3ff; --bot:#ff5c6c; --ok:#3ddc97; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; min-height:100vh; min-height:100dvh; background:var(--bg); color:var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; display:flex; justify-content:center; }
+  main { width:100%; max-width:480px; padding:24px 16px calc(24px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:16px; }
+  h1 { margin:8px 0 0; font-size:1.8rem; text-align:center; }
+  h2 { margin:0; font-size:1.2rem; text-align:center; }
+  p.sub { margin:0; text-align:center; color:var(--muted); }
+  button { font:inherit; color:var(--text); background:var(--card); border:2px solid transparent; border-radius:14px;
+           padding:16px; min-height:56px; cursor:pointer; text-align:left; }
+  button:active:not(:disabled) { transform:scale(.98); }
+  button.primary { background:var(--accent); text-align:center; font-weight:600; }
+  button:disabled { opacity:.45; cursor:default; }
+  button small { display:block; color:var(--muted); margin-top:2px; }
+  .list { display:flex; flex-direction:column; gap:10px; }
+  .fighter { background:var(--card); border-radius:14px; padding:14px; }
+  .fighter.active { border:2px solid var(--accent); }
+  .fighter .row { display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600; }
+  .bar { height:12px; background:#0d0b16; border-radius:6px; overflow:hidden; }
+  .bar > div { height:100%; transition:width .4s; }
+  .player .bar > div { background:var(--player); } .bot .bar > div { background:var(--bot); }
+  #log { background:var(--card); border-radius:14px; padding:12px; min-height:120px; max-height:30vh; overflow-y:auto; font-size:.95rem; display:flex; flex-direction:column; gap:6px; }
+  #log .p { color:var(--player); } #log .b { color:var(--bot); } #log .i { color:var(--muted); }
+  .win { color:var(--ok); } .lose { color:var(--bot); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// Données identiques à classes.json (copiées ici pour fonctionner sans serveur)
+const CLASSES = {
+  Guerrier: { vie:120, pouvoirs:[{name:"Coup d'épée",value:10},{name:"Frappe puissante",value:15}] },
+  Mage:     { vie:90,  pouvoirs:[{name:"Boule de feu",value:14},{name:"Éclair de glace",value:18}] },
+  Voleur:   { vie:100, pouvoirs:[{name:"Coup dans le dos",value:12},{name:"Poison",value:16}] },
+  Pretre:   { vie:110, pouvoirs:[{name:"Eau bénite",value:10},{name:"Croix de saint Pierre",value:15}] },
+};
+const PAUSE = 900;
+const app = document.getElementById("app");
+const $ = (html) => { app.innerHTML = html; return app; };
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+function menu() {
+  $(`<h1>Languette ton Bot 💩</h1><p class="sub">Combat au tour par tour</p>
+     <button class="primary" id="go">Lancer</button>`);
+  document.getElementById("go").onclick = () => choisirClasse("Quelle classe voulez-vous choisir ?", (p) =>
+    choisirClasse("Choisir une classe pour l'adversaire", (b) => combat(p, b)));
+}
+
+function choisirClasse(titre, suite) {
+  $(`<h2>${titre}</h2><div class="list">` + Object.entries(CLASSES).map(([nom, c]) =>
+     `<button data-c="${nom}">${nom}<small>${c.vie} PV · ${c.pouvoirs.map(p => `${p.name} (${p.value})`).join(" · ")}</small></button>`).join("") + `</div>`);
+  app.querySelectorAll("button").forEach(btn => btn.onclick = () => suite(btn.dataset.c));
+}
+
+function creer(classe) {
+  return { classe, max: CLASSES[classe].vie, vie: CLASSES[classe].vie, pouvoirs: CLASSES[classe].pouvoirs };
+}
+
+async function combat(cp, cb) {
+  const joueur = creer(cp), bot = creer(cb);
+  const carte = (id, cls, titre, f) => `<div class="fighter ${cls}" id="${id}"><div class="row"><span>${titre} · ${f.classe}</span><span class="v"></span></div><div class="bar"><div></div></div></div>`;
+  $(carte("fb", "bot", "Bot", bot) + carte("fp", "player", "Joueur", joueur) +
+    `<div id="log"></div><div class="list" id="actions"></div>`);
+  const log = document.getElementById("log"), actions = document.getElementById("actions");
+  const ecrire = (txt, cls = "i") => { log.insertAdjacentHTML("beforeend", `<div class="${cls}">${txt}</div>`); log.scrollTop = log.scrollHeight; };
+  const maj = () => [["fp", joueur], ["fb", bot]].forEach(([id, f]) => {
+    const el = document.getElementById(id);
+    el.querySelector(".v").textContent = `${f.vie} / ${f.max}`;
+    el.querySelector(".bar > div").style.width = (100 * f.vie / f.max) + "%";
+  });
+  const frappe = (att, cible, pouvoir, cls, nom) => {
+    cible.vie = Math.max(0, cible.vie - pouvoir.value);
+    ecrire(`${nom} : ${pouvoir.name} — ${pouvoir.value} dégâts`, cls);
+    maj();
+    return cible.vie <= 0;
+  };
+  const fin = (gagne) => {
+    actions.innerHTML = `<h2 class="${gagne ? "win" : "lose"}">${gagne ? "Le joueur a gagné !" : "Le bot a gagné !"}</h2>
+      <button class="primary" id="again">Rejouer</button>`;
+    document.getElementById("again").onclick = menu;
+  };
+
+  maj();
+  let tourJoueur = Math.random() < 0.5;
+  ecrire(tourJoueur ? "Le joueur commence." : "Le bot commence.");
+
+  while (true) {
+    if (tourJoueur) {
+      document.getElementById("fp").classList.add("active");
+      const pouvoir = await new Promise(res => {
+        actions.innerHTML = joueur.pouvoirs.map((p, i) => `<button data-i="${i}">${p.name}<small>${p.value} dégâts</small></button>`).join("");
+        actions.querySelectorAll("button").forEach(b => b.onclick = () => res(joueur.pouvoirs[b.dataset.i]));
+      });
+      actions.innerHTML = "";
+      document.getElementById("fp").classList.remove("active");
+      if (frappe(joueur, bot, pouvoir, "p", "Joueur")) return fin(true);
+    } else {
+      document.getElementById("fb").classList.add("active");
+      actions.innerHTML = `<p class="sub">Le bot réfléchit…</p>`;
+      await wait(PAUSE);
+      document.getElementById("fb").classList.remove("active");
+      const pouvoir = bot.pouvoirs[Math.floor(Math.random() * bot.pouvoirs.length)];
+      if (frappe(bot, joueur, pouvoir, "b", "Bot")) return fin(false);
+    }
+    tourJoueur = !tourJoueur;
+    await wait(300);
+  }
+}
+
+menu();
+</script>
+</body>
+</html>
